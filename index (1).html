@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_top">
+<meta name="theme-color" content="#1b1530">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="sudappka">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>sudappka</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Fredoka:wght@600&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday, for children: bright, cheerful, clear
+   IDEA the sticker chart on the family fridge: each child has a colour, ticks earn stars, full days get a kiss
+   PICTURE today's task list drawn as big tappable stickers, plus a month grid filling with green kiss days
+   COLOUR white ground, each child's own colour as the top band (raspberry, blue, sunflower), green for done
+   TYPE Baloo 2 for headings and numbers, Nunito for text
+   LAYOUT laptop: band with day and children on top, task list left, calendar and stars right; phone: stacked in that order */
+:root{color-scheme:light dark;--bg:#ffffff;--ink:#1b1530;--mute:#6b6480;--card:#f6f3fb;--line:#e6e0f0;--ok:#1fae5b;--okbg:#dff6e8;--part:#ffe28a;--miss:#ffe0e0;--gold:#fff4cc;--k:#ff5d8f;--kink:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#16131f;--ink:#f3eefc;--mute:#a79fbd;--card:#221d2e;--line:#363048;--okbg:#173a26;--part:#5a4a14;--miss:#45222a;--gold:#3d3410}}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 Nunito,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3,.num{font-family:"Baloo 2",Nunito,sans-serif;letter-spacing:-.02em;line-height:1.05;margin:0}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.band{padding-block:clamp(20px,3vw,40px);padding-inline:max(4vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+.top{background:var(--k);color:var(--kink);transition:background .3s}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.brand span{font:600 26px Fredoka,Nunito,sans-serif;letter-spacing:-.01em;line-height:1}
+.brand svg{flex:none}
+.hd{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.hd p{margin:0 0 4px;font-weight:800;opacity:.85}
+.hd h1{font-size:clamp(32px,5vw,50px);text-wrap:balance}
+.nav{display:flex;gap:8px;flex-wrap:wrap}
+.nav button{min-height:44px;min-width:44px;border:2px solid currentColor;background:transparent;border-radius:999px;padding:0 16px;font-weight:800}
+.nav button:hover{background:rgba(255,255,255,.18)}
+.nav #tod.away{background:var(--kink);color:var(--k);border-color:var(--kink)}
+.rel{font-size:.55em;font-weight:600;opacity:.85;white-space:nowrap}
+.kids{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}
+.kid{display:flex;align-items:center;gap:12px;padding:12px;border-radius:20px;border:0;background:var(--bg);color:var(--ink);text-align:left;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+.kid[aria-pressed=true]{outline:4px solid var(--kink);outline-offset:0}
+.av{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:800 24px "Baloo 2",sans-serif;position:relative}
+.kid b{display:block;font-size:18px;line-height:1.2}
+.kid small{color:var(--mute);font-weight:700;font-size:13px}
+.ring{position:absolute;inset:-4px;width:56px;height:56px;transform:rotate(-90deg)}
+.main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(18px,3vw,36px);align-items:start}
+.prog{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.prog h2{font-size:30px;white-space:nowrap}
+.bar{flex:1;height:16px;border-radius:99px;background:var(--card);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .4s}
+.list{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.task{width:100%;display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:14px;padding:14px 16px;border-radius:18px;border:2px solid var(--line);background:var(--bg);text-align:left;min-height:68px;transition:transform .15s,background .2s}
+.task:not(:disabled):hover{border-color:var(--k)}
+.task:not(:disabled):active{transform:scale(.98)}
+.task:disabled{cursor:default}
+.box{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);display:grid;place-items:center;color:#fff;font-weight:800}
+.em{font-size:30px;line-height:1}
+.tt{font-weight:800;font-size:18px;line-height:1.25}
+.st{color:#e9a800;font-size:18px;white-space:nowrap;letter-spacing:1px}
+.task.on{background:var(--okbg);border-color:var(--ok)}
+.task.on .box{background:var(--ok);border-color:var(--ok)}
+.task.on .tt{color:var(--mute);text-decoration:line-through;text-decoration-thickness:2px}
+.task.on .box{animation:pop .35s}
+@keyframes pop{50%{transform:scale(1.3)}}
+.task.wait{background:var(--gold);border-color:#e9a800}
+.task.wait .box{border-color:#e9a800;background:#e9a800;font-size:16px}
+.task.no{border-color:#e5484d}
+.tt small{display:block;font-size:13px;font-weight:700;color:var(--mute);text-decoration:none}
+.task.no .tt small{color:#e5484d}
+.apr{display:none;margin-bottom:22px;padding:16px;border-radius:20px;border:3px solid #e9a800;background:var(--gold)}
+.parent .apr.has{display:block}
+.apr-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.apr-h h3{font-size:24px}
+.apr ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.apr li{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--bg);border-radius:14px;padding:8px 10px;font-weight:700}
+.apr li small{display:block;color:var(--mute);font-size:13px}
+.ok,.nok{width:44px;height:44px;border-radius:12px;border:0;font-weight:800;font-size:18px;color:#fff}
+.ok{background:var(--ok)}
+.nok{background:#e5484d}
+.sw{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.sw button{min-height:48px;padding:0 20px;border-radius:999px;border:2px solid var(--line);background:var(--bg);font-weight:800;font-size:17px}
+.sw button[aria-pressed=true]{background:var(--k);color:var(--kink);border-color:var(--k)}
+.qhead{padding:16px;border-radius:18px;background:var(--card);margin-bottom:16px;font-weight:700}
+.qhead .num{font-size:40px}
+.qsec{margin:18px 0 8px;font-size:22px}
+.qs{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.qq{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;padding:12px;border-radius:16px;border:2px solid var(--line)}
+.qq.good{border-color:var(--ok);background:var(--okbg)}
+.qq.bad{border-color:#e5484d}
+.qn{width:34px;height:34px;border-radius:50%;background:var(--k);color:var(--kink);display:grid;place-items:center;font-weight:800}
+.qq p{margin:0 0 8px;font-weight:700;font-size:17px}
+.qq input{min-height:44px;width:min(220px,100%);border:2px solid var(--line);border-radius:12px;padding:0 12px;font-size:18px;background:var(--bg);font-weight:800}
+.opts{display:grid;gap:6px}
+.opt{min-height:44px;text-align:left;border:2px solid var(--line);border-radius:12px;background:var(--bg);padding:8px 12px;font-weight:700}
+.opt[aria-pressed=true]{border-color:var(--k);background:var(--card);box-shadow:inset 0 0 0 2px var(--k)}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.wrong{border-color:#e5484d;text-decoration:line-through}
+.fix{display:block;margin-top:6px;font-size:14px;color:var(--mute);font-weight:700}
+.qq.bad .fix{color:#e5484d}
+.qsend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:18px}
+.fam{margin-bottom:18px;padding:14px 16px;border-radius:18px;border:2px dashed var(--line);font-weight:700}
+.fam.won{border:3px solid var(--ok);background:var(--okbg)}
+.fam b{font-size:18px}
+.fam ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:15px}
+.d .fb{font-size:11px;font-weight:800;line-height:1}
+.pockets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.pocket{padding:14px 16px;border-radius:18px;background:var(--card);font-weight:700;display:flex;flex-direction:column;gap:2px}
+.pocket.fam{background:var(--okbg)}
+.pocket .num{font-size:36px}
+.pocket small{color:var(--mute);font-size:13px}
+.mrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.shop{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.shop li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;border:2px solid var(--line)}
+.shop.jars li{grid-template-columns:auto minmax(0,1fr)}
+.shop small{display:block;color:var(--mute);font-weight:700;font-size:14px}
+.shop .em{font-size:30px}
+.miss-s{color:var(--mute);font-weight:800;font-size:14px;white-space:nowrap}
+.jb{display:block;height:12px;border-radius:9px;background:var(--card);overflow:hidden;margin:8px 0}
+.jb i{display:block;height:100%;background:var(--ok)}
+.pay{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.okt{color:var(--ok);display:block}
+.hint{margin:14px 0 0;color:var(--mute);font-weight:700;font-size:15px}
+.empty{padding:28px;border-radius:18px;background:var(--card);text-align:center;font-weight:700}
+.card{background:var(--card);border-radius:22px;padding:18px;border:1px solid var(--line)}
+.side{display:grid;gap:18px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-h h3{font-size:24px}
+.cal-h button{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);background:var(--bg);font-weight:800}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.cal .w{text-align:center;font-size:13px;font-weight:800;color:var(--mute)}
+.d{aspect-ratio:1;border-radius:12px;border:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:15px;line-height:1;padding:0;position:relative}
+.d.out{visibility:hidden}
+.d.all{background:var(--ok);color:#fff}
+.d.part{background:var(--part)}
+.d.miss{background:var(--miss)}
+.d.today{box-shadow:inset 0 0 0 3px var(--k)}
+.d.sel{outline:3px solid var(--ink);outline-offset:1px}
+.d .kiss{font-size:13px;margin-top:2px}
+.leg{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:13px;font-weight:700;color:var(--mute)}
+.leg i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px}
+.figs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fig{background:var(--bg);border-radius:16px;padding:12px 14px}
+.fig .num{font-size:38px}
+.fig small{display:block;color:var(--mute);font-weight:700;font-size:14px}
+.rw{margin-top:14px}
+.rw h3,.bd h3{font-size:20px;margin-bottom:8px}
+.rwl{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rwl li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-weight:700}
+.rwl li span:last-child{white-space:nowrap;color:var(--mute);font-size:14px}
+.rwl .mb{grid-column:1/-1;height:8px;border-radius:9px;background:var(--bg);overflow:hidden}
+.rwl .mb i{display:block;height:100%;background:#e9a800}
+.rwl li.got{color:var(--ok)}
+.bd{margin-top:14px}
+.bdl{display:flex;flex-wrap:wrap;gap:8px}
+.bdg{padding:6px 12px;border-radius:99px;font-weight:800;font-size:14px;background:var(--bg);border:2px dashed var(--line);color:var(--mute)}
+.bdg.got{border:2px solid #e9a800;color:var(--ink);background:var(--gold)}
+.foot{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);color:var(--mute);font-size:14px;font-weight:700}
+.btn{min-height:44px;padding:0 18px;border-radius:999px;border:2px solid var(--line);background:var(--bg);font-weight:800}
+.btn.pri{background:var(--k);color:var(--kink);border-color:var(--k)}
+.pbar{display:none;margin-top:16px;padding:10px 14px;border-radius:14px;background:var(--bg);color:var(--ink);font-weight:800;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.parent .pbar{display:flex}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,150%);background:var(--ink);color:var(--bg);padding:14px 22px;border-radius:999px;font-weight:800;font-size:18px;transition:transform .3s,visibility .3s;visibility:hidden;z-index:20;max-width:calc(100vw - 32px);text-align:center}
+#toast.show{transform:translate(-50%,0);visibility:visible}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:30}
+.ov{position:fixed;inset:0;background:rgba(20,10,40,.55);display:none;place-items:center;z-index:25;padding:16px}
+.ov.show{display:grid}
+.cel{background:var(--bg);border-radius:28px;padding:30px 26px;max-width:420px;text-align:center;border:4px solid var(--ok)}
+.cel .big{font-size:96px;line-height:1;animation:kiss 1.2s ease-in-out infinite}
+@keyframes kiss{50%{transform:scale(1.15) rotate(-6deg)}}
+.cel h2{font-size:40px;margin:10px 0 6px;color:var(--ok)}
+.cel p{margin:0 0 18px;font-weight:700;font-size:18px}
+dialog{border:0;border-radius:24px;padding:0;background:var(--bg);color:var(--ink);width:min(760px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+dialog::backdrop{background:rgba(20,10,40,.55)}
+.dl{padding:20px}
+.dl h2{font-size:30px;margin-bottom:12px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.er{display:grid;grid-template-columns:56px minmax(0,1fr) 72px 44px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.er input,.er select,.rr input,.rr select,#gate input{min-height:44px;border:2px solid var(--line);border-radius:12px;padding:0 10px;background:var(--bg);font-size:16px;width:100%}
+.er .em-in{text-align:center;font-size:22px;padding:0}
+.days{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:4px}
+.days button{min-width:40px;min-height:36px;border-radius:10px;border:2px solid var(--line);background:var(--bg);font-weight:800;font-size:13px}
+.days button[aria-pressed=true]{background:var(--k);color:var(--kink);border-color:var(--k)}
+.x{width:44px;height:44px;border-radius:12px;border:2px solid var(--line);background:var(--bg);font-weight:800}
+.rr{display:grid;grid-template-columns:minmax(0,1fr) 80px 110px 44px;gap:8px;padding:6px 0}
+.acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:16px;position:sticky;bottom:0;background:var(--bg);padding-top:10px}
+.lbl{font-weight:800;margin:16px 0 4px}
+@media(max-width:860px){.main{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.kids{gap:8px}.kid{flex-direction:column;text-align:center;gap:6px;padding:10px 6px}.kid small{font-size:13px}.task{gap:10px;padding:12px}.em{font-size:26px}.tt{font-size:17px}.er{grid-template-columns:48px minmax(0,1fr) 64px 44px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="band top" id="top">
+  <div class="wrap">
+    <div class="brand"><svg width="36" height="36" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="24" fill="#1b1530"/><circle cx="27" cy="50" r="14" fill="#ff5d8f"/><circle cx="50" cy="50" r="14" fill="#2f7cf6"/><circle cx="73" cy="50" r="14" fill="#ffb703"/></svg><span>sudappka</span></div>
+    <div class="hd">
+      <div><p id="who">Obowiązki</p><h1 id="dayT">Dzisiaj</h1></div>
+      <div class="nav"><button id="prev" aria-label="Poprzedni dzień">‹</button><button id="tod">Dziś</button><button id="next" aria-label="Następny dzień">›</button></div>
+    </div>
+    <div class="kids" id="kids"></div>
+    <div class="pbar"><span>Tryb rodzica: zatwierdzasz zgłoszenia i możesz poprawiać poprzednie dni.</span><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="edit">Edytuj zadania i nagrody</button><button class="btn" id="pend">Zakończ</button></span></div>
+  </div>
+</header>
+<main class="band"><div class="wrap main">
+  <section>
+    <div class="sw"><button id="tbT" aria-pressed="true">Zadania</button><button id="tbQ" aria-pressed="false">🧠 Quiz dnia</button><button id="tbS" aria-pressed="false">🛍️ Sklepik</button></div>
+    <div id="vT">
+    <div class="apr" id="apr"></div>
+    <div class="fam" id="fam"></div>
+    <div class="prog"><h2 id="pt">0 / 0</h2><div class="bar"><i id="pb" style="width:0"></i></div></div>
+    <ul class="list" id="list"></ul>
+    <p class="hint" id="hint"></p>
+    </div>
+    <div id="vQ" hidden></div>
+    <div id="vS" hidden></div>
+  </section>
+  <aside class="side">
+    <div class="card">
+      <div class="cal-h"><button id="mp" aria-label="Poprzedni miesiąc">‹</button><h3 id="mT">Miesiąc</h3><button id="mn" aria-label="Następny miesiąc">›</button></div>
+      <div class="cal" id="cal"></div>
+      <div class="leg"><span><i style="background:var(--ok)"></i>wszystko zrobione 😘</span><span><i style="background:var(--part)"></i>część</span><span><i style="background:var(--miss)"></i>nic</span></div>
+    </div>
+    <div class="card">
+      <div class="figs"><div class="fig"><div class="num" id="fs">0</div><small id="fsl">gwiazdek razem</small></div><div class="fig"><div class="num" id="fk">0</div><small id="fkl">dni z rzędu</small></div></div>
+      <div class="rw"><h3 id="rwh">Na koncie</h3><ul class="rwl" id="rw"></ul></div>
+      <div class="bd"><h3>Odznaki</h3><div class="bdl" id="bd"></div></div>
+    </div>
+  </aside>
+</div></main>
+<footer class="band"><div class="wrap foot"><span id="store">Wczytuję…</span><button class="btn" id="par">Tryb rodzica</button></div></footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<canvas id="fx"></canvas>
+<div class="ov" id="ov"><div class="cel" role="dialog" aria-modal="true" aria-labelledby="celT"><div class="big">😘</div><h2 id="celT">Komplet!</h2><p id="celP"></p><button class="btn pri" id="celB">Dziękuję!</button></div></div>
+
+<dialog id="gate"><form class="dl" id="gateF"><h2>Tryb rodzica</h2><p style="font-weight:800;font-size:18px">Podaj PIN rodzica</p><input id="ga" type="password" inputmode="numeric" autocomplete="off" aria-label="PIN rodzica"><p class="hint" id="ge"></p><div class="acts"><button type="button" class="btn" id="gc">Anuluj</button><button class="btn pri">Wejdź</button></div></form></dialog>
+<dialog id="ed"><div class="dl"><h2>Zadania i nagrody</h2><div class="tabs" id="etabs"></div><div class="lbl">Imię</div><div class="rr" style="grid-template-columns:minmax(0,1fr)"><input id="ename" aria-label="Imię dziecka"></div><div class="lbl">Zadania (emoji, nazwa, gwiazdki, dni tygodnia)</div><div id="etasks"></div><button class="btn" id="eadd" style="margin-top:10px">+ Dodaj zadanie</button><div class="lbl">Nagrody za zebrane gwiazdki (wspólne dla wszystkich)</div><div id="erw"></div><button class="btn" id="eradd" style="margin-top:6px">+ Dodaj nagrodę</button><div class="acts"><button class="btn" id="ecan">Anuluj</button><button class="btn pri" id="esave">Zapisz</button></div></div></dialog>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const WD=['Nd','Pn','Wt','Śr','Cz','Pt','So'],ORD=[1,2,3,4,5,6,0];
+const WDL=['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'];
+const MG=['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'];
+const MN=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse=k=>{const a=k.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])};
+const add=(k,n)=>{const d=parse(k);d.setDate(d.getDate()+n);return key(d)};
+const pl=(n,a,b,c)=>{const t=n%10,h=n%100;return n===1?a:(t>=2&&t<=4&&(h<12||h>14))?b:c};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>'t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const inkFor=h=>{const n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255;return (r*299+g*587+b*114)/1000>165?'#1b1530':'#ffffff'};
+const ALL=[0,1,2,3,4,5,6];
+const T=(e,t,s,d)=>({id:uid(),e,t,s,d});
+const PRAISE=['Super robota, {n}!','Brawo, {n}!','Tak trzymaj, {n}!','Ekstra, {n}!','{n}, jesteś mistrzem!','Pięknie, {n}! 💪','Rewelacja, {n}!'];
+const BADGES=[[3,'🔥 3 dni z rzędu'],[7,'🏅 Tydzień mistrza'],[14,'🚀 2 tygodnie'],[30,'👑 Miesiąc bez przerwy']];
+const LS='obowiazki-dziecko';
+let srvToday=key(new Date());
+const today=()=>srvToday;
+const S={cfg:null,done:{},quiz:{},qd:{},shop:[],tab:'t',kid:null,day:null,month:null,parent:false,pin:'',err:''};
+let pending=0;
+
+// google.script.run jako Promise
+// Adres bramki z Apps Script (link kończący się na /exec). Potrzebny tylko w wersji na GitHub Pages.
+const API_URL='WKLEJ_TUTAJ_LINK_EXEC';
+const GAS=typeof google!=='undefined'&&google.script&&google.script.run;
+const call=(fn,...a)=>GAS?new Promise((ok,no)=>{google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn](...a)})
+ :fetch(API_URL,{method:'POST',body:JSON.stringify({fn,args:a}),credentials:'omit',redirect:'follow'}).then(r=>r.json()).then(j=>{if(!j.ok)throw new Error(j.error);return j.data});
+if(!GAS&&'serviceWorker' in navigator){try{navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}}
+const msg=e=>(e&&e.message?e.message:String(e||'Błąd')).replace(/^Exception:\s*/,'').replace(/^Error:\s*/,'');
+
+// ===== QUIZ DNIA: generator zadań i banki pytań =====
+const QZ=(()=>{
+const hash=s=>{let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19}return h>>>0};
+const rng=seed=>{let a=hash(seed);return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}};
+const gcd=(a,b)=>{a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b]}return a||1};
+const fr=(n,d)=>{if(d<0){n=-n;d=-d}const g=gcd(n,d);n/=g;d/=g;if(d===1)return String(n);const w=Math.trunc(n/d),r=Math.abs(n%d);return n+'/'+d+(w?' ('+(n<0?'-':'')+Math.abs(w)+' '+r+'/'+d+')':'')};
+const dec=x=>String(Math.round(x*10000)/10000).replace('.',',');
+const pn=(n,a,b,c)=>{const t=n%10,h=n%100;return n===1?a:(t>=2&&t<=4&&(h<12||h>14))?b:c};
+const neg=x=>x<0?'('+x+')':String(x);
+
+function maths(grade,R){
+ const ri=(a,b)=>a+Math.floor(R()*(b-a+1)),pick=a=>a[Math.floor(R()*a.length)];
+ const Q=(q,v,a)=>({q,v,a:a==null?dec(v):a});
+ if(grade===2)return[
+  ()=>{const a=ri(12,39),b=ri(5,20);return Q(a+' + '+b+' =',a+b)},
+  ()=>{const a=ri(20,50),b=ri(3,15);return Q(a+' − '+b+' =',a-b)},
+  ()=>{const a=ri(2,5),b=ri(2,6);return Q(a+' · '+b+' =',a*b)},
+  ()=>{const a=ri(2,5),b=ri(2,6);return Q(a*b+' : '+a+' =',b)},
+  ()=>{const c=ri(20,50),b=ri(5,15);return Q('? + '+b+' = '+c+'. Jaka liczba to „?”',c-b)},
+  ()=>{const a=ri(10,30),b=ri(5,15),c=ri(3,12);return Q(a+' + '+b+' − '+c+' =',a+b-c)},
+  ()=>{const a=ri(10,25),b=ri(3,10),c=ri(2,8);return Q('Ania ma '+a+' '+pn(a,'naklejkę','naklejki','naklejek')+'. Dostała od Krysi jeszcze '+b+', a potem dała Michałowi '+c+'. Ile naklejek ma teraz Ania?',a+b-c)},
+  ()=>{const a=ri(2,4),b=ri(2,5);return Q('Na '+a+' talerzach leży po '+b+' '+pn(b,'ciastko','ciastka','ciastek')+'. Ile ciastek jest razem?',a*b)},
+  ()=>{const k=pick([2,3]),q=ri(2,6);return Q('Mama podzieliła '+k*q+' cukierków po równo na '+k+' dzieci. Ile cukierków dostało każde dziecko?',q)}
+ ];
+ if(grade===4)return[
+  ()=>{const a=ri(2000,6999),b=ri(1200,9999-a);return Q(a+' + '+b+' =',a+b)},
+  ()=>{const a=ri(5001,9999),b=ri(1000,a-600);return Q(a+' − '+b+' =',a-b)},
+  ()=>{const a=ri(124,989),b=ri(3,9);return Q(a+' · '+b+' =',a*b)},
+  ()=>{const b=ri(3,9),q=ri(24,111);return Q(q*b+' : '+b+' =',q)},
+  ()=>{const a=ri(10,50),b=ri(3,9),c=ri(4,12),e=ri(2,9),f=ri(2,9);return Q(a+' + '+b+' · '+c+' − '+e*f+' : '+e+' =',a+b*c-f)},
+  ()=>{const d=pick([3,4,5,6,8]);let n;do{n=ri(1,d-1)}while(gcd(n,d)>1);const x=d*ri(4,15);return Q('Ile to '+n+'/'+d+' z liczby '+x+'?',x/d*n)},
+  ()=>{const d=pick([5,7,8,9,10,12]),a=ri(1,d-2),b=ri(1,d-1-a);return Q(a+'/'+d+' + '+b+'/'+d+' =',(a+b)/d,fr(a+b,d))},
+  ()=>{const p=ri(18,32),k=ri(3,5),r=ri(5,15);return Q('Bilet do kina kosztuje '+p+' zł. Ile złotych zapłaci rodzina za '+k+(k<5?' bilety':' biletów')+', jeśli dostanie '+r+' zł rabatu na całość?',p*k-r)},
+  ()=>pick([()=>{const h=ri(2,5),m=ri(5,55);return Q('Ile to minut: '+h+' h '+m+' min?',h*60+m)},()=>{const m=ri(2,9),c=ri(5,95);return Q('Ile to centymetrów: '+m+' m '+c+' cm?',m*100+c)},()=>{const k=ri(2,9),g=ri(50,950);return Q('Ile to gramów: '+k+' kg '+g+' g?',k*1000+g)}])()
+ ];
+ // klasa 6
+ const D=[2,3,4,5,6,8,9,10,12],fz=()=>{const d=pick(D);let n;do{n=ri(1,d-1)}while(gcd(n,d)>1);return[n,d]};
+ return[
+  ()=>{let a,b;do{a=fz();b=fz()}while(a[1]===b[1]);if(R()<.5)return Q(a[0]+'/'+a[1]+' + '+b[0]+'/'+b[1]+' =',a[0]/a[1]+b[0]/b[1],fr(a[0]*b[1]+b[0]*a[1],a[1]*b[1]));
+   if(a[0]/a[1]<b[0]/b[1])[a,b]=[b,a];return Q(a[0]+'/'+a[1]+' − '+b[0]+'/'+b[1]+' =',a[0]/a[1]-b[0]/b[1],fr(a[0]*b[1]-b[0]*a[1],a[1]*b[1]))},
+  ()=>{const w=ri(1,3),a=fz(),b=fz(),n=w*a[1]+a[0];return Q(w+' '+a[0]+'/'+a[1]+' · '+b[0]+'/'+b[1]+' =',n/a[1]*b[0]/b[1],fr(n*b[0],a[1]*b[1]))},
+  ()=>{const a=fz(),b=fz();return Q(a[0]+'/'+a[1]+' : '+b[0]+'/'+b[1]+' =',a[0]/a[1]/(b[0]/b[1]),fr(a[0]*b[1],a[1]*b[0]))},
+  ()=>pick([()=>{const x=ri(12,96)/10,y=pick([0.2,0.25,0.4,0.5,1.5,2.5]);return Q(dec(x)+' · '+dec(y)+' =',x*y)},()=>{const x=ri(80,250)/10,y=ri(105,795)/100;return Q(dec(x)+' − '+dec(y)+' =',Math.round((x-y)*100)/100)},()=>{const y=pick([0.2,0.4,0.5,0.8,1.2]),q=ri(12,60)/10,x=Math.round(q*y*100)/100;return Q(dec(x)+' : '+dec(y)+' =',q)}])(),
+  ()=>{const p=pick([5,12,15,20,25,30,35,40,75]);let n;do{n=20*ri(3,25)}while(p*n%100);return Q('Ile to '+p+'% z liczby '+n+'?',p*n/100)},
+  ()=>{const a=ri(3,9),b=ri(2,6),c=ri(5,20),d=ri(2,9);return Q('(−'+a+') · '+b+' + '+c+' − (−'+d+') =',-a*b+c+d)},
+  ()=>{const a=ri(3,9),b=ri(2,5),c=ri(6,12),d=ri(1,5),s=a*a+b*(c-d)**2,e=ri(5,Math.min(60,s-1));return Q(a+'² + '+b+' · ('+c+' − '+d+')² − '+e+' =',s-e)},
+  ()=>pick([()=>{const a=ri(4,15),b=ri(3,12),h=ri(3,10);return Q('Trapez ma podstawy '+a+' cm i '+b+' cm oraz wysokość '+h+' cm. Oblicz jego pole (w cm²).',(a+b)*h/2)},()=>{const a=ri(5,18),h=ri(3,14);return Q('Trójkąt ma podstawę '+a+' cm i wysokość '+h+' cm. Oblicz jego pole (w cm²).',a*h/2)},()=>{const a=ri(4,12),b=ri(3,9),c=ri(2,6);return Q('Prostopadłościan ma wymiary '+a+' cm × '+b+' cm × '+c+' cm. Oblicz jego objętość (w cm³).',a*b*c)}])(),
+  ()=>pick([()=>{const p=20*ri(6,20),r=pick([10,15,20,25,30]);return Q('Kurtka kosztowała '+p+' zł. Jej cenę obniżono o '+r+'%. Ile złotych kosztuje teraz?',p*(100-r)/100)},()=>{const v=ri(12,24),t=pick([1.5,2.5,0.5,3.5]);return Q('Rowerzysta jedzie ze stałą prędkością '+v+' km/h. Ile kilometrów przejedzie w '+dec(t)+' h?',v*t)},()=>{const k=ri(3,6),p=ri(4,9),q=ri(2,5);return Q('Krysia kupiła '+k+(k<5?' zeszyty':' zeszytów')+' po '+dec(p+.5)+' zł i '+q+(q<5?' długopisy':' długopisów')+' po '+dec(q+1.2)+' zł. Ile złotych zapłaciła?',Math.round((k*(p+.5)+q*(q+1.2))*100)/100)}])()
+ ];
+}
+
+const EN={
+ 2:'pies:dog,kot:cat,ryba:fish,ptak:bird,koń:horse,krowa:cow,mysz:mouse,jabłko:apple,banan:banana,mleko:milk,chleb:bread,woda:water,ser:cheese,jajko:egg,czerwony:red,niebieski:blue,zielony:green,żółty:yellow,czarny:black,biały:white,siostra:sister,brat:brother,dom:house,szkoła:school,książka:book,długopis:pen,ołówek:pencil,krzesło:chair,stół:table,okno:window,drzwi:door,słońce:sun,deszcz:rain,śnieg:snow,drzewo:tree,kwiat:flower,samochód:car,rower:bike,piłka:ball,lalka:doll,ręka:hand,głowa:head,oko:eye,nos:nose,duży:big,mały:small,łóżko:bed,but:shoe,zegar:clock,dziecko:child,przyjaciel:friend,morze:sea,zabawka:toy,kaczka:duck,świnia:pig,owca:sheep,pomarańcza:orange,cytryna:lemon,kurczak:chicken,szczęśliwy:happy',
+ 4:'pogoda:weather,chmura:cloud,wiatr:wind,zima:winter,lato:summer,wiosna:spring,jesień:autumn,poniedziałek:Monday,wtorek:Tuesday,środa:Wednesday,czwartek:Thursday,piątek:Friday,sobota:Saturday,niedziela:Sunday,kuchnia:kitchen,łazienka:bathroom,sypialnia:bedroom,ogród:garden,sklep:shop,szpital:hospital,biblioteka:library,lotnisko:airport,ulica:street,wieś:village,góra:mountain,rzeka:river,las:forest,jezioro:lake,nauczyciel:teacher,lekarz:doctor,strażak:firefighter,kucharz:cook,biegać:run,pływać:swim,skakać:jump,czytać:read,pisać:write,śpiewać:sing,tańczyć:dance,spać:sleep,smutny:sad,zmęczony:tired,głodny:hungry,szybki:fast,wysoki:tall,gorący:hot,zimny:cold,kurtka:jacket,spodnie:trousers,sukienka:dress,ręcznik:towel,nożyczki:scissors,plecak:backpack,ząb:tooth,ucho:ear,noga:leg,palec:finger,łokieć:elbow,pszczoła:bee,motyl:butterfly,żaba:frog,królik:rabbit,wiewiórka:squirrel,sowa:owl',
+ 6:'środowisko:environment,podróż:journey,bilet:ticket,bagaż:luggage,granica:border,kraj:country,pieniądze:money,cena:price,paragon:receipt,klient:customer,zdrowie:health,choroba:illness,lekarstwo:medicine,ból głowy:headache,odważny:brave,uprzejmy:polite,leniwy:lazy,pracowity:hard-working,nieśmiały:shy,dumny:proud,zazdrosny:jealous,zmartwiony:worried,zaskoczony:surprised,przestraszony:scared,wygrać:win,przegrać:lose,wybierać:choose,zapomnieć:forget,pamiętać:remember,obiecać:promise,wyjaśnić:explain,porównać:compare,wierzyć:believe,osiągnąć:achieve,poprawić:improve,dzielić się:share,wydarzenie:event,doświadczenie:experience,wiadomość:message,umiejętność:skill,przyszłość:future,przeszłość:past,wynalazek:invention,naukowiec:scientist,dziennikarz:journalist,prawnik:lawyer,inżynier:engineer,budynek:building,sąsiad:neighbour,most:bridge,wieża:tower,pustynia:desert,wybrzeże:coast,wyspa:island,trzęsienie ziemi:earthquake,powódź:flood,zanieczyszczenie:pollution,oszczędzać:save,dorosły:adult,natychmiast:immediately,zwykle:usually,nigdy:never,czasami:sometimes,wkrótce:soon,chociaż:although'
+};
+
+// [pytanie, poprawna, błędna, błędna]
+const HI={
+ 2:[['Jak nazywa się stolica Polski?','Warszawa','Kraków','Gdańsk'],['Jakie kolory ma flaga Polski?','biały i czerwony','biały i niebieski','czerwony i zielony'],['Co jest w godle Polski?','biały orzeł w koronie','czerwony smok','złoty lew'],['Jak nazywa się hymn Polski?','Mazurek Dąbrowskiego','Rota','Bogurodzica'],['Według legendy kto założył państwo polskie?','Lech','Krak','Wars'],['Kogo pokonał szewczyk w legendzie o Krakowie?','smoka wawelskiego','złotą kaczkę','bazyliszka'],['O powstaniu którego miasta opowiada legenda o Warsie i Sawie?','Warszawy','Gniezna','Poznania'],['Kto był pierwszym królem Polski?','Bolesław Chrobry','Mieszko I','Kazimierz Wielki'],['W którym roku Mieszko I przyjął chrzest?','966','1410','1918'],['Kiedy obchodzimy Święto Niepodległości?','11 listopada','3 maja','1 czerwca'],['Jakie święto obchodzimy 3 maja?','Święto Konstytucji 3 Maja','Święto Niepodległości','Dzień Dziecka'],['Co odkrył Mikołaj Kopernik?','że Ziemia krąży wokół Słońca','że Słońce krąży wokół Ziemi','że Ziemia jest płaska'],['Kim był Fryderyk Chopin?','kompozytorem i pianistą','malarzem','królem'],['Kim była Maria Skłodowska-Curie?','uczoną, która dostała dwie Nagrody Nobla','królową Polski','autorką bajek'],['Które miasto według tradycji było pierwszą stolicą Polski?','Gniezno','Warszawa','Wrocław'],['Które miasto było stolicą Polski przed Warszawą?','Kraków','Gdańsk','Łódź'],['Jak nazywa się zamek królewski w Krakowie?','Wawel','Malbork','Książ'],['Jak nazywał się papież Jan Paweł II, zanim został papieżem?','Karol Wojtyła','Stefan Wyszyński','Lech Wałęsa'],['Kto napisał „Pana Tadeusza”?','Adam Mickiewicz','Henryk Sienkiewicz','Jan Brzechwa'],['Co jest w herbie Warszawy?','syrenka','smok','niedźwiedź']],
+ 4:[['W którym roku Mieszko I przyjął chrzest?','966','1025','1410'],['Kto był pierwszym koronowanym królem Polski?','Bolesław Chrobry','Mieszko I','Władysław Łokietek'],['W którym roku odbyła się bitwa pod Grunwaldem?','1410','1525','1683'],['Kogo pokonali Polacy i Litwini pod Grunwaldem?','Krzyżaków','Szwedów','Turków'],['Który król „zastał Polskę drewnianą, a zostawił murowaną”?','Kazimierz Wielki','Bolesław Chrobry','Zygmunt III Waza'],['Co założył Kazimierz Wielki w 1364 roku?','Akademię Krakowską','Uniwersytet Warszawski','zamek w Malborku'],['Kogo poślubiła królowa Jadwiga?','Władysława Jagiełłę','Kazimierza Wielkiego','Jana III Sobieskiego'],['W którym roku uchwalono Konstytucję 3 Maja?','1791','1918','1569'],['Ile było rozbiorów Polski?','trzy','dwa','pięć'],['W którym roku Polska odzyskała niepodległość?','1918','1945','1795'],['Kto stanął na czele państwa polskiego po odzyskaniu niepodległości w 1918 roku?','Józef Piłsudski','Lech Wałęsa','Tadeusz Kościuszko'],['Z kim walczyli Polacy w Bitwie Warszawskiej w 1920 roku?','z bolszewikami (Armią Czerwoną)','z Niemcami','ze Szwedami'],['Kiedy wybuchła II wojna światowa?','1 września 1939','11 listopada 1918','1 sierpnia 1944'],['Kiedy wybuchło Powstanie Warszawskie?','1 sierpnia 1944','1 września 1939','3 maja 1791'],['Kto dowodził powstaniem w 1794 roku?','Tadeusz Kościuszko','Józef Piłsudski','Jan Henryk Dąbrowski'],['Który król dowodził odsieczą wiedeńską w 1683 roku?','Jan III Sobieski','Stefan Batory','Zygmunt August'],['Według Kopernika w środku układu planet znajduje się:','Słońce','Ziemia','Księżyc'],['W którym roku powstała „Solidarność”?','1980','1989','1966'],['Kto był przywódcą „Solidarności”?','Lech Wałęsa','Józef Piłsudski','Władysław Gomułka'],['W którym roku Polska wstąpiła do Unii Europejskiej?','2004','1999','1989'],['W którym roku Polska wstąpiła do NATO?','1999','2004','1980'],['W którym roku Karol Wojtyła został papieżem?','1978','1989','2004'],['Za panowania którego króla stolicę przeniesiono z Krakowa do Warszawy?','Zygmunta III Wazy','Kazimierza Wielkiego','Bolesława Chrobrego'],['Kto napisał powieść „Krzyżacy”?','Henryk Sienkiewicz','Adam Mickiewicz','Bolesław Prus'],['Kto napisał słowa „Mazurka Dąbrowskiego”?','Józef Wybicki','Adam Mickiewicz','Fryderyk Chopin'],['Czym była Komisja Edukacji Narodowej (1773)?','pierwszym w Europie urzędem do spraw szkół','pierwszą polską armią','bankiem narodowym']],
+ 6:[['W którym roku odbył się zjazd gnieźnieński?','1000','966','1025'],['W którym roku Mieszko I zwyciężył pod Cedynią?','972','1000','1109'],['W którym roku obroniono Głogów przed wojskami niemieckimi?','1109','972','1241'],['Z kim walczyło polskie rycerstwo pod Legnicą w 1241 roku?','z Mongołami','z Krzyżakami','z Turkami'],['Który władca zjednoczył Polskę po rozbiciu dzielnicowym i koronował się w 1320 roku?','Władysław Łokietek','Kazimierz Wielki','Bolesław Krzywousty'],['Po śmierci którego władcy zaczęło się rozbicie dzielnicowe (1138)?','Bolesława Krzywoustego','Bolesława Chrobrego','Mieszka II'],['W którym roku zawarto unię w Krewie?','1385','1569','1410'],['Co utworzyła unia lubelska w 1569 roku?','Rzeczpospolitą Obojga Narodów','Księstwo Warszawskie','Królestwo Polskie (Kongresowe)'],['Kto złożył hołd pruski w 1525 roku?','Albrecht Hohenzollern','Ulrich von Jungingen','Fryderyk Wielki'],['Gdzie podpisano pokój kończący wojnę trzynastoletnią z Krzyżakami (1466)?','w Toruniu','w Krewie','w Lublinie'],['Podczas jakiej wojny broniono Jasnej Góry w 1655 roku?','potopu szwedzkiego','powstania listopadowego','wojny z Krzyżakami'],['Na co pozwalało liberum veto?','zerwać sejm sprzeciwem jednego posła','królowi rozwiązać sejm','chłopom wybierać posłów'],['Kto był pierwszym królem wybranym w wolnej elekcji?','Henryk Walezy','Stefan Batory','Zygmunt August'],['Który sejm uchwalił Konstytucję 3 Maja?','Sejm Czteroletni','Sejm Niemy','Sejm grodzieński'],['W którym roku nastąpił III rozbiór Polski?','1795','1772','1815'],['Które państwa dokonały rozbiorów Polski?','Rosja, Prusy i Austria','Rosja, Szwecja i Turcja','Francja, Prusy i Austria'],['Kto utworzył Księstwo Warszawskie w 1807 roku?','Napoleon Bonaparte','car Aleksander I','Tadeusz Kościuszko'],['W którym roku wybuchło powstanie listopadowe?','1830','1863','1794'],['W którym roku wybuchło powstanie styczniowe?','1863','1830','1848'],['W którym roku uchwalono konstytucję marcową?','1921','1918','1935'],['Kto dowodził obroną Westerplatte w 1939 roku?','mjr Henryk Sucharski','gen. Władysław Anders','gen. Stefan Rowecki'],['Czyje wojsko zdobyło Monte Cassino w 1944 roku?','2 Korpusu gen. Andersa','Armii Krajowej','Legionów Piłsudskiego'],['Kto dokonał zbrodni katyńskiej w 1940 roku?','radzieckie NKWD','niemieckie gestapo','wojsko szwedzkie'],['W którym roku odbyły się obrady Okrągłego Stołu?','1989','1980','1999'],['Kiedy odbyły się pierwsze częściowo wolne wybory do Sejmu?','4 czerwca 1989','11 listopada 1918','1 maja 2004'],['Kogo pokonała husaria pod Kircholmem w 1605 roku?','Szwedów','Turków','Krzyżaków']]
+};
+
+// geografia Polski: [pytanie, poprawna, błędna, błędna]
+const GEO={
+ 2:[['Jakie morze leży na północy Polski?','Bałtyckie','Czarne','Śródziemne'],['Jaka rzeka płynie przez Kraków i Warszawę?','Wisła','Odra','Warta'],['Jak nazywają się najwyższe góry w Polsce?','Tatry','Bieszczady','Sudety'],['Jak nazywa się najdłuższa rzeka w Polsce?','Wisła','Odra','Warta'],['Które miasto leży nad morzem?','Gdańsk','Kraków','Łódź'],['Jak nazywa się najwyższy szczyt w Polsce?','Rysy','Giewont','Śnieżka'],['W którą stronę świata od Krakowa trzeba jechać nad morze?','na północ','na południe','na wschód'],['Co na mapie oznacza kolor niebieski?','wodę: rzeki, jeziora i morza','góry','lasy'],['Co na mapie fizycznej oznacza kolor zielony?','niziny','wysokie góry','morze'],['Jak nazywa się kraina wielu jezior na północy Polski?','Mazury','Podhale','Kujawy'],['Gdzie leży Zakopane?','w górach','nad morzem','nad jeziorem'],['W której puszczy żyją słynne żubry?','w Puszczy Białowieskiej','w Puszczy Amazońskiej','w Borach Tucholskich'],['Ile pór roku mamy w Polsce?','cztery','dwie','sześć'],['Jakie zwierzę jest symbolem Tatr?','kozica','wielbłąd','pingwin']],
+ 4:[['Ile województw ma Polska?','16','12','20'],['Jak nazywa się najwyższy szczyt Polski?','Rysy','Śnieżka','Babia Góra'],['Do jakiego morza wpada Wisła?','do Morza Bałtyckiego','do Morza Czarnego','do Morza Północnego'],['W jakich górach ma źródła Wisła?','w Beskidzie Śląskim','w Tatrach','w Sudetach'],['Jak nazywa się największe jezioro w Polsce?','Śniardwy','Hańcza','Morskie Oko'],['Jak nazywa się najgłębsze jezioro w Polsce?','Hańcza','Śniardwy','Mamry'],['Jak nazywa się najwyższy szczyt Sudetów (Karkonoszy)?','Śnieżka','Rysy','Tarnica'],['W której części Polski leżą Bieszczady?','w południowo-wschodniej','w północno-zachodniej','w środkowej'],['Czym jest Hel?','półwyspem','wyspą','jeziorem'],['Jakie miasto jest stolicą województwa małopolskiego?','Kraków','Katowice','Rzeszów'],['Jakie miasto jest stolicą województwa pomorskiego?','Gdańsk','Szczecin','Bydgoszcz'],['Która rzeka płynie przez Wrocław?','Odra','Wisła','Warta'],['Gdzie jest najniżej położony obszar Polski?','na Żuławach Wiślanych','na Mazurach','na Podhalu'],['W którym parku narodowym są ruchome wydmy?','w Słowińskim','w Tatrzańskim','w Bieszczadzkim'],['Które miasto jest największe w Polsce?','Warszawa','Kraków','Łódź'],['W jakich górach leży Morskie Oko?','w Tatrach','w Bieszczadach','w Karkonoszach']],
+ 6:[['Z iloma państwami graniczy Polska?','z 7','z 5','z 9'],['Z którym państwem Polska ma najdłuższą granicę?','z Czechami','z Niemcami','z Ukrainą'],['Z którą częścią Rosji graniczy Polska?','z obwodem kaliningradzkim','z obwodem petersburskim','z Syberią'],['W jakiej strefie klimatycznej leży Polska?','umiarkowanej','zwrotnikowej','podbiegunowej'],['Jak nazywa się najwyższy szczyt polskich Beskidów?','Babia Góra','Śnieżka','Tarnica'],['Jak nazywa się najwyższy szczyt polskich Bieszczadów?','Tarnica','Babia Góra','Śnieżka'],['W której krainie leżą Kaszuby?','na Pomorzu','na Śląsku','na Mazowszu'],['Która rzeka na zachodzie oddziela Polskę od Niemiec?','Odra (z Nysą Łużycką)','Bug','San'],['Która rzeka tworzy część wschodniej granicy Polski?','Bug','Odra','Warta'],['Jak nazywa się największa wyspa w całości należąca do Polski?','Wolin','Uznam','Hel'],['Jakie miasto jest stolicą województwa podkarpackiego?','Rzeszów','Lublin','Kielce'],['Jakie miasto jest stolicą województwa warmińsko-mazurskiego?','Olsztyn','Białystok','Elbląg'],['Jakie miasto jest stolicą województwa zachodniopomorskiego?','Szczecin','Koszalin','Gorzów Wielkopolski'],['W której części Europy leży Polska?','w środkowej','w południowej','w zachodniej'],['Gdzie w Polsce wydobywa się najwięcej węgla kamiennego?','na Górnym Śląsku','na Mazurach','na Podlasiu'],['Jak nazywa się kraina z największą liczbą jezior w Polsce?','Pojezierze Mazurskie','Wyżyna Lubelska','Nizina Śląska']]
+};
+
+const parseAns=s=>{s=String(s||'').trim().replace(/\s+/g,' ').replace(/−/g,'-').replace(',','.');if(!s)return NaN;
+ let m=s.match(/^(-?)(\d+) (\d+)\/(\d+)$/);if(m)return(m[1]?-1:1)*(+m[2]+m[3]/m[4]);
+ m=s.match(/^(-?\d+)\/(\d+)$/);if(m)return m[1]/m[2];
+ return /^-?\d+(\.\d+)?$/.test(s)?+s:NaN};
+
+// które generatory matematyki: z każdej grupy losujemy jeden → 6 zadań
+const MGRP={2:[[0],[1],[2],[3],[4,5],[6,7,8]],4:[[0,1],[2],[3],[4],[5,6],[7,8]],6:[[0],[1,2],[3],[4],[5,6],[7,8]]};
+function make(kid,grade,day){
+ const R=rng(day+'|'+kid),ri=(a,b)=>a+Math.floor(R()*(b-a+1));
+ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+ const g=grade<=2?2:grade<=4?4:6;
+ const gens=maths(g,R),m=MGRP[g].map(gr=>Object.assign({t:'m'},gens[gr[Math.floor(R()*gr.length)]]()));
+ const words=EN[g].split(',').map(x=>x.split(':')),en=shuffle(words).slice(0,4).map(([pl,ok])=>{const o=shuffle(words.filter(w=>w[1]!==ok)).slice(0,2).map(w=>w[1]);return{t:'c',q:'Jak jest po angielsku „'+pl+'”?',o:shuffle([ok].concat(o)),a:ok}});
+ const mc=([q,ok,b,c])=>({t:'c',q,o:shuffle([ok,b,c]),a:ok});
+ const hi=shuffle(HI[g]).slice(0,3).map(mc),geo=shuffle(GEO[g]).slice(0,3).map(mc);
+ return{m,en,hi,geo,all:m.concat(en,hi,geo)};
+}
+const check=(x,v)=>x.t==='m'?Math.abs(parseAns(v)-x.v)<1e-6:v===x.a;
+return{make,check,parseAns};
+})();
+
+const GRADE={anna:2,michal:4,krystyna:6};
+const BONUS=6,QPASS=11,OWN=0.7; // rodzinny bonus +6★; OWN: najwyżej 70% gwiazdek na nagrody osobiste: wszyscy mają komplet zadań i zaliczony quiz (11/16)
+const famOk=day=>kids().length>0&&kids().every(k=>{const r=rec(k.id,day),q=S.quiz[day+'_'+k.id];return r&&r.all&&q&&q.done&&q.s>=QPASS}); // klasy dzieci – zmień we wrześniu
+const kids=()=>S.cfg?S.cfg.kids:[];
+const K=()=>kids().find(k=>k.id===S.kid)||kids()[0];
+const tasksFor=(kid,day)=>((S.cfg&&S.cfg.tasks[kid])||[]).filter(t=>(t.d||[]).includes(parse(day).getDay()));
+const rec=(kid,day)=>S.done[day+'_'+kid];
+function status(kid,day){const r=rec(kid,day);if(r&&r.total>0){if(r.all)return'all';if(r.ids.length||(r.pend||[]).length)return'part'}
+ if(!tasksFor(kid,day).length)return'free';if(day<today()&&day>=S.cfg.start)return'miss';return''}
+const starsOf=kid=>earned(kid);
+function streak(kid){let d=today(),n=0;if(status(kid,d)!=='all')d=add(d,-1);for(let i=0;i<500&&d>=S.cfg.start;i++,d=add(d,-1)){const s=status(kid,d);if(s==='all')n++;else if(s!=='free')break}return n}
+function best(kid){let d=S.cfg.start,n=0,b=0;const t=today();for(let i=0;i<1500&&d<=t;i++,d=add(d,1)){const s=status(kid,d);if(s==='all'){n++;b=Math.max(b,n)}else if(s!=='free'&&d<t)n=0}return b}
+const canTick=()=>S.day===today()||(S.parent&&S.day<today());
+
+function render(){
+ if(!S.cfg){$('#list').innerHTML='<li class="empty">Wczytuję zadania…</li>';return}
+ const k=K();S.kid=k.id;const r=document.documentElement.style;r.setProperty('--k',k.color);r.setProperty('--kink',inkFor(k.color));
+ const d=parse(S.day),isT=S.day===today();
+ $('#who').textContent=k.name+(isT?' · dziś':S.day<today()?' · było':' · będzie');
+ const dd=Math.round((d-parse(today()))/864e5),rel=dd===0?'dziś':dd===1?'jutro':dd===-1?'wczoraj':dd>0?'za '+dd+' '+pl(dd,'dzień','dni','dni'):(-dd)+' '+pl(-dd,'dzień','dni','dni')+' temu';
+ $('#dayT').innerHTML=esc(WDL[d.getDay()][0].toUpperCase()+WDL[d.getDay()].slice(1)+', '+d.getDate()+' '+MG[d.getMonth()])+' <span class="rel">('+rel+')</span>';
+ const tb=$('#tod');tb.textContent=isT?'Dziś':'← Wróć do dziś';tb.classList.toggle('away',!isT);
+ $('#kids').innerHTML=kids().map(c=>{const ts=tasksFor(c.id,today()),rr=rec(c.id,today())||{ids:[],pend:[]},dn=rr.ids.filter(i=>ts.some(t=>t.id===i)).length,wt=(rr.pend||[]).filter(i=>ts.some(t=>t.id===i)).length,p=ts.length?dn/ts.length:0,C=150.8;
+  return `<button class="kid" data-k="${c.id}" aria-pressed="${c.id===k.id}"><span class="av" style="background:${c.color};color:${inkFor(c.color)}">${esc(c.name[0])}<svg class="ring" viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="${p>=1?'#1fae5b':'rgba(0,0,0,.12)'}" stroke-width="4" stroke-dasharray="${(p*C).toFixed(1)} ${C}" stroke-linecap="round"/></svg></span><span><b>${esc(c.name)}</b><small>dziś ${dn}/${ts.length}${p>=1&&ts.length?' 😘':''}${wt?' · ⏳'+wt:''}${S.quiz[today()+'_'+c.id]?' · 🧠✓':''}</small></span></button>`}).join('');
+ const ts=tasksFor(k.id,S.day),rc=rec(k.id,S.day)||{ids:[]},ids=rc.ids.filter(i=>ts.some(t=>t.id===i)),pd=rc.pend||[],od=rc.odrz||[],en=canTick();
+ $('#pt').textContent=ids.length+' / '+ts.length;$('#pb').style.width=(ts.length?ids.length/ts.length*100:0)+'%';
+ $('#list').innerHTML=ts.length?ts.map(t=>{const on=ids.includes(t.id),w=!on&&pd.includes(t.id),no=!on&&!w&&od.includes(t.id);return `<li><button class="task${on?' on':w?' wait':no?' no':''}" data-t="${t.id}" ${en?'':'disabled'} aria-pressed="${on||w}"><span class="box">${on?'✓':w?'⏳':''}</span><span class="em" aria-hidden="true">${esc(t.e)}</span><span class="tt">${esc(t.t)}${w?'<small>czeka na zatwierdzenie</small>':no?'<small>rodzic nie zatwierdził – zrób jeszcze raz</small>':''}</span><span class="st" aria-label="${t.s} ${pl(+t.s,'gwiazdka','gwiazdki','gwiazdek')}">${'★'.repeat(+t.s||1)}</span></button></li>`}).join(''):'<li class="empty">Dziś wolne od obowiązków 🎈</li>';
+ $('#hint').textContent=S.day>today()?'To przyszły dzień – zadania odhaczysz, kiedy nadejdzie.':!isT&&!S.parent?'Odhaczać można tylko dzisiejsze zadania. Rodzic może poprawić poprzednie dni.':ts.length&&ids.length===ts.length?'Wszystko zatwierdzone! Buziak już leci 😘':S.parent&&ts.length?'Tryb rodzica: stuknięcie od razu zatwierdza albo odznacza zadanie.':ts.length&&ids.length+pd.filter(i=>ts.some(t=>t.id===i)).length===ts.length?'Wszystko zgłoszone! Buziak po zatwierdzeniu przez rodzica 😘':ts.length?'Stuknij zadanie, kiedy je zrobisz. Gwiazdki dostaniesz, gdy rodzic zatwierdzi.':'';
+ const fm=$('#fam');if(S.day>today()){fm.hidden=true}else{fm.hidden=false;const won=famOk(S.day);fm.classList.toggle('won',won);
+  fm.innerHTML=`<b>${won?'🎉 Rodzinny bonus zdobyty! +'+BONUS+' ★ dla każdego':'👨‍👩‍👧 Rodzinny bonus +'+BONUS+' ★ dla każdego'}</b>${won?'':'<br>Gdy wszyscy zrobią wszystkie zadania i zaliczą quiz.'}<ul>${kids().map(c=>{const rr=rec(c.id,S.day),q=S.quiz[S.day+'_'+c.id];return `<li>${esc(c.name)}: ${rr&&rr.all?'✅':'⬜'} zadania · ${q&&q.done?(q.s>=QPASS?'✅ quiz zaliczony':'❌ quiz niezaliczony'):q?'⏳ quiz w trakcie':'⬜ quiz'}</li>`}).join('')}</ul>`}
+ // calendar
+ const m=S.month||S.day.slice(0,7);S.month=m;const md=parse(m+'-01'),off=(md.getDay()+6)%7,dim=new Date(md.getFullYear(),md.getMonth()+1,0).getDate();
+ $('#mT').textContent=MN[md.getMonth()]+' '+md.getFullYear();
+ let h=['Pn','Wt','Śr','Cz','Pt','So','Nd'].map(w=>`<span class="w">${w}</span>`).join('');for(let i=0;i<off;i++)h+='<span class="d out"></span>';
+ for(let i=1;i<=dim;i++){const dk=m+'-'+pad(i),s=status(k.id,dk);h+=`<button class="d ${s}${dk===today()?' today':''}${dk===S.day?' sel':''}" data-d="${dk}" aria-label="${i} ${MG[md.getMonth()]}${s==='all'?', wszystko zrobione':s==='part'?', część zrobiona':s==='miss'?', nic nie zrobione':''}">${i}${s==='all'?'<span class="kiss">😘</span>':''}${famOk(dk)?'<span class="fb">+'+BONUS+'</span>':''}</button>`}
+ $('#cal').innerHTML=h;
+ // stats
+ const st=starsOf(k.id),sk=streak(k.id),bs=best(k.id);
+ $('#fs').textContent=st;$('#fsl').textContent=pl(st,'gwiazdka','gwiazdki','gwiazdek')+' razem';
+ $('#fk').textContent=sk;$('#fkl').textContent=pl(sk,'dzień','dni','dni')+' z rzędu na 😘'+(bs>sk?' · rekord '+bs:'');
+ const pk2=pockets(k.id),sd=Math.max(0,pk2.own);$('#rwh').textContent='Moja kieszeń: '+sd+' ★ · rodzinna: '+pk2.fam+' ★';
+ $('#rw').innerHTML=(S.cfg.rewards||[]).slice().sort((a,b)=>a.c-b.c).map(w=>{const f=w.typ==='rodzinna',z=f?jar(w.id).reduce((a,x)=>a+x.c,0):sd,got=z>=w.c;return `<li class="${got?'got':''}"><span>${esc(w.e||'')} ${esc(w.t)}${f?' (wspólna)':''}</span><span>${got?(f?'zebrane!':'stać Cię!'):(f?z+' / '+w.c+' ★':'brakuje '+(w.c-z)+' ★')}</span><span class="mb"><i style="width:${Math.min(100,z/w.c*100)}%"></i></span></li>`}).join('')||'<li>Brak nagród.</li>';
+ $('#bd').innerHTML=BADGES.map(([n,t])=>`<span class="bdg${bs>=n?' got':''}">${t}</span>`).join('');
+ document.body.classList.toggle('parent',S.parent);
+ const W=waiting(),SW=S.shop.filter(x=>x.st==='do wydania').length;$('#par').textContent='Tryb rodzica'+(W.length?' · ⏳ '+W.length:'')+(SW?' · 🛍️ '+SW:'');
+ const a=$('#apr');a.classList.toggle('has',W.length>0);
+ $('#vT').hidden=S.tab!=='t';$('#vQ').hidden=S.tab!=='q';$('#vS').hidden=S.tab!=='s';['T','Q','S'].forEach(x=>$('#tb'+x).setAttribute('aria-pressed',S.tab===x.toLowerCase()));
+ renderQuiz();renderShop();
+ a.innerHTML=W.length?`<div class="apr-h"><h3>Do zatwierdzenia: ${W.length}</h3><button class="btn" id="apAll" style="background:var(--ok);color:#fff;border-color:var(--ok)">Zatwierdź wszystko</button></div><ul>${W.map(x=>`<li><span class="em" aria-hidden="true">${esc(x.t.e)}</span><span>${esc(x.kname)}: ${esc(x.t.t)}<small>${x.day===today()?'dziś':parse(x.day).getDate()+' '+MG[parse(x.day).getMonth()]} · ${'★'.repeat(+x.t.s||1)}</small></span><button class="ok" data-ok="1" data-i="${x.i}" aria-label="Zatwierdź">✓</button><button class="nok" data-ok="0" data-i="${x.i}" aria-label="Odrzuć">✕</button></li>`).join('')}</ul>`:'';
+}
+
+function waiting(){const out=[];if(!S.cfg)return out;
+ Object.values(S.done).forEach(r=>{(r.pend||[]).forEach(id=>{const t=((S.cfg.tasks[r.kid])||[]).find(x=>x.id===id),kd=kids().find(k=>k.id===r.kid);if(t&&kd)out.push({kid:r.kid,kname:kd.name,day:r.date,taskId:id,t})})});
+ out.sort((a,b)=>a.day<b.day?1:a.day>b.day?-1:a.kname.localeCompare(b.kname));out.forEach((x,i)=>x.i=i);return out}
+function decide(items){if(!items.length)return;pending++;
+ items.forEach(x=>{const k=x.day+'_'+x.kid,r=Object.assign({ids:[],pend:[],odrz:[]},S.done[k]);r.pend=(r.pend||[]).filter(i=>i!==x.taskId);if(x.ok)r.ids=r.ids.concat(x.taskId);else r.odrz=(r.odrz||[]).concat(x.taskId);S.done=Object.assign({},S.done,{[k]:r})});render();
+ chain=chain.then(()=>call('decyzja',items.map(x=>({kid:x.kid,day:x.day,taskId:x.taskId,ok:x.ok})),S.pin)).then(res=>{S.done=Object.assign({},S.done,res);toast(items.length>1?'Zatwierdzone ✓':items[0].ok?'Zatwierdzone ✓':'Odrzucone')})
+  .catch(e=>{toast(msg(e));return load()}).then(()=>{pending--;render()})}
+
+function renderQuiz(){
+ const v=$('#vQ');
+ if(S.tab!=='q'||!S.cfg)return;
+ const k=K(),key=S.day+'_'+k.id,res=S.quiz[key],n=res?(res.ans||[]).filter(x=>x!==null&&x!=='').length:0,sig=key+'|'+n+'|'+(res&&res.done)+'|'+today();
+ if(v.dataset.sig===sig)return;v.dataset.sig=sig;
+ const gr=k.grade||GRADE[k.id]||4,live=S.day===today();
+ if(S.day>today()){v.innerHTML='<div class="empty">Quiz na ten dzień pojawi się tego dnia rano.</div>';return}
+ if(!n&&!live){v.innerHTML='<div class="empty">Tego dnia quiz nie został rozwiązany.</div>';return}
+ const all=QZ.make(k.id,gr,S.day).all,ans=res?res.ans:[],ok=res?res.ok:[],dr=S.qd[key]||(S.qd[key]={});
+ const item=(x,i)=>{const a=ans[i],done=a!==null&&a!==undefined&&a!=='',cls=done?(ok[i]?' good':' bad'):'',dis=done||!live?' disabled':'';let body;
+  if(x.t==='m')body=`<div class="mrow"><input data-i="${i}" inputmode="text" autocomplete="off" aria-label="Odpowiedź ${i+1}" value="${esc(done?a:(dr[i]||''))}"${dis}>${done||!live?'':`<button class="btn pri" data-chk="${i}">Sprawdź</button>`}</div>`+(done?`<span class="fix">${ok[i]?'Dobrze! ✅':'Niestety. Poprawna odpowiedź: '+esc(x.a)}</span>`:'');
+  else body='<div class="opts">'+x.o.map((o,j)=>{const c=done?(o===x.a?' right':o===a?' wrong':''):'';return `<button class="opt${c}" data-i="${i}" data-v="${esc(o)}"${dis}>${'ABC'[j]}) ${esc(o)}</button>`}).join('')+'</div>'+(done?`<span class="fix">${ok[i]?'Dobrze! ✅':'Niestety. Poprawna odpowiedź to: '+esc(x.a)}</span>`:'');
+  return `<li class="qq${cls}"><span class="qn">${i+1}</span><div><p>${esc(x.q)}</p>${body}</div></li>`};
+ const sec=(t,from,to,extra)=>`<h3 class="qsec">${t}</h3>${extra||''}<ol class="qs">${all.slice(from,to).map((x,j)=>item(x,from+j)).join('')}</ol>`;
+ const good=ok.filter(x=>x===true).length;
+ v.innerHTML=(res&&res.done?`<div class="qhead"><span class="num">${res.s} / 16</span><br>Matematyka ${res.m}/6 · Angielski ${res.e}/4 · Historia ${res.h}/3 · Geografia ${res.g}/3 · zdobyte ${res.stars} ★</div>`
+  :`<div class="qhead">Quiz dla klasy ${gr}: 6 zadań z matematyki, 4 z angielskiego, 3 z historii i 3 z geografii Polski. Każda odpowiedź liczy się od razu, więc zastanów się, zanim klikniesz! Za dobry wynik zdobywasz do 3 ★.${n?`<br><b>Odpowiedzi: ${n}/16 · dobrze: ${good}</b>`:''}</div>`)
+  +sec('Matematyka',0,6,live&&!(res&&res.done)?'<p class="hint" style="margin:0 0 10px">Ułamki wpisuj tak: 3/4, liczby mieszane: 1 1/2, ułamki dziesiętne z przecinkiem: 2,5.</p>':'')+sec('Angielski',6,10)+sec('Historia Polski',10,13)+sec('Geografia Polski',13,16);
+}
+let qchain=Promise.resolve();
+function answer(i,val){
+ const k=K(),key=S.day+'_'+k.id;if(S.day!==today())return;
+ const x=QZ.make(k.id,k.grade||GRADE[k.id]||4,S.day).all[i];val=String(val||'').trim();if(!val){toast('Wpisz odpowiedź');return}
+ const old=S.quiz[key]||{date:S.day,kid:k.id,ans:Array(16).fill(null),ok:Array(16).fill(null)};
+ if(old.ans[i]!==null&&old.ans[i]!==undefined&&old.ans[i]!=='')return;
+ if(x.t==='m'&&isNaN(QZ.parseAns(val))){toast('Tego nie rozumiem. Wpisz liczbę, np. 12, 3/4 albo 2,5');return}
+ const good=QZ.check(x,val),r={...old,ans:old.ans.slice(),ok:old.ok.slice()};r.ans[i]=val;r.ok[i]=good;
+ const c=(a,b)=>r.ok.slice(a,b).filter(z=>z===true).length;r.m=c(0,6);r.e=c(6,10);r.h=c(10,13);r.g=c(13,16);r.s=r.m+r.e+r.h+r.g;
+ r.done=r.ans.every(z=>z!==null&&z!=='');r.stars=!r.done?0:r.s>=15?3:r.s>=12?2:r.s>=8?1:0;r.pass=r.done&&r.s>=QPASS;
+ S.quiz={...S.quiz,[key]:r};render();
+ if(r.done){chime(true);if(r.s===16)confetti(180);toast(r.s===16?'Komplet 16/16, '+k.name+'! +3 ★':r.stars?'Koniec! Wynik '+r.s+'/16 – zdobywasz '+r.stars+' ★':'Koniec! Wynik '+r.s+'/16. Jutro będzie lepiej! 💪')}
+ else if(good){chime(false);toast('Dobrze! ✅')}else toast('Niestety… poprawna odpowiedź jest na zielono');
+ pending++;qchain=qchain.then(()=>call('odpowiedzQuiz',k.id,S.day,i,val,good)).then(z=>{S.quiz={...S.quiz,[z.key]:z.rec}}).catch(e=>{toast(msg(e));return load()}).then(()=>{pending--;render()});
+}
+
+// ===== SKLEPIK =====
+const earned=kid=>Object.values(S.done).concat(Object.values(S.quiz)).filter(r=>r.kid===kid).reduce((a,r)=>a+(+r.stars||0),0)+BONUS*Object.values(S.done).filter(r=>r.kid===kid&&famOk(r.date)).length;
+const spent=kid=>S.shop.filter(x=>x.kid===kid&&x.st!=='zwrócone').reduce((a,x)=>a+x.c,0);
+const pockets=kid=>{const z=earned(kid),cap=Math.floor(z*OWN),fp=z-cap,m=S.shop.filter(x=>x.kid===kid&&x.st!=='zwrócone'),buy=m.filter(x=>x.typ==='Zakup').reduce((a,x)=>a+x.c,0),pay=m.filter(x=>x.typ==='Wpłata').reduce((a,x)=>a+x.c,0),zr=Math.min(pay,fp);return{own:cap-buy-(pay-zr),fam:fp-zr}};
+const saldo=kid=>{const p=pockets(kid);return Math.max(0,p.own)+p.fam};
+const jar=rid=>S.shop.filter(x=>x.rid===rid&&x.st==='w skarbonce');
+const kname=id=>(kids().find(k=>k.id===id)||{name:id}).name;
+let sconf='';
+function renderShop(){
+ const v=$('#vS');if(S.tab!=='s'||!S.cfg)return;
+ const k=K(),sd=saldo(k.id),rw=S.cfg.rewards||[],ownR=rw.filter(r=>r.typ!=='rodzinna').sort((a,b)=>a.c-b.c),fam=rw.filter(r=>r.typ==='rodzinna').sort((a,b)=>a.c-b.c);
+ const mine=S.shop.filter(x=>x.kid===k.id&&x.st==='do wydania'),todo=S.shop.filter(x=>x.st==='do wydania');
+ const pk=pockets(k.id),own=Math.max(0,pk.own);
+ let h=`<div class="pockets"><div class="pocket"><span class="num">${own} ★</span><b>🎒 Moja kieszeń</b><small>na nagrody dla siebie albo do skarbonek</small></div><div class="pocket fam"><span class="num">${pk.fam} ★</span><b>👨‍👩‍👧 Kieszeń rodzinna</b><small>tylko do wspólnych skarbonek</small></div></div><p class="hint" style="margin:0 0 6px">Z każdych 10 zdobytych ★ – 7 trafia do Twojej kieszeni, a 3 do rodzinnej. Zarobione łącznie: ${earned(k.id)} ★</p>`;
+ if(S.parent&&todo.length)h+=`<div class="apr has" style="display:block"><div class="apr-h"><h3>Do wydania: ${todo.length}</h3></div><ul>${todo.map(x=>`<li><span class="em">🛍️</span><span>${esc(kname(x.kid))}: ${esc(x.t)}<small>${x.c} ★</small></span><button class="ok" data-sa="wydaj" data-id="${x.id}" aria-label="Wydane">✓</button><button class="nok" data-sa="zwroc" data-id="${x.id}" aria-label="Zwróć gwiazdki">↩</button></li>`).join('')}</ul></div>`;
+ h+='<h3 class="qsec">Nagrody dla Ciebie (z Twojej kieszeni)</h3><ul class="shop">'+ownR.map(r=>{const can=own>=r.c,cf=sconf==='b'+r.id;
+  return `<li><span class="em">${esc(r.e||'🎁')}</span><span><b>${esc(r.t)}</b><small>${r.c} ★</small></span>${can?`<button class="btn${cf?' pri':''}" data-buy="${r.id}">${cf?'Na pewno? Kupuję!':'Kupuję'}</button>`:`<span class="miss-s">brakuje ${r.c-own} ★</span>`}</li>`}).join('')+'</ul>';
+ if(mine.length)h+=`<p class="hint">Czeka na rodzica: ${mine.map(x=>esc(x.t)).join(', ')}</p>`;
+ h+='<h3 class="qsec">Wspólne skarbonki rodzinne</h3><ul class="shop jars">'+fam.map(r=>{const j=jar(r.id),z=j.reduce((a,x)=>a+x.c,0),full=z>=r.c,by={};j.forEach(x=>by[x.kid]=(by[x.kid]||0)+x.c);
+  const who=Object.keys(by).map(id=>esc(kname(id))+' '+by[id]).join(' · ')||'nikt jeszcze nie wpłacił',left=r.c-z,cr=sconf==='r'+r.id;
+  return `<li><span class="em">${esc(r.e||'🎁')}</span><span><b>${esc(r.t)}</b><small>${z} / ${r.c} ★ · ${who}</small><span class="jb"><i style="width:${Math.min(100,z/r.c*100)}%"></i></span>
+   ${full?'<b class="okt">🎉 Zebrane! Rodzice zorganizują wyjście.</b>':(sd<1?'<span class="miss-s">Nie masz teraz gwiazdek do wpłaty</span>':`<span class="pay">${[10,50].filter(a=>a<Math.min(sd,left)).map(a=>`<button class="btn" data-pay="${r.id}" data-amt="${a}">+${a}</button>`).join('')}<button class="btn" data-pay="${r.id}" data-amt="${Math.min(sd,left)}">Wpłać ${Math.min(sd,left)}</button></span>`)}
+   ${S.parent?`<span class="pay">${full?`<button class="btn pri" data-jr="zrealizuj" data-id="${r.id}">✓ Zrealizowane</button>`:''}${z?`<button class="btn${cr?' pri':''}" data-jr="zwrocSkarbonke" data-id="${r.id}">${cr?'Na pewno zwrócić wpłaty?':'↩ Zwróć wpłaty'}</button>`:''}</span>`:''}</span></li>`}).join('')+'</ul>';
+ v.innerHTML=h;
+}
+function shopCall(fn,...a){pending++;return call(fn,...a).then(l=>{S.shop=l}).catch(e=>toast(msg(e))).then(()=>{pending--;render()})}
+
+let chain=Promise.resolve();
+function toggle(id){
+ if(!canTick())return;const k=S.kid,day=S.day,ts=tasksFor(k,day),key0=day+'_'+k,old=Object.assign({ids:[],pend:[],odrz:[],all:false},rec(k,day));
+ const has=(a,x)=>(a||[]).includes(x),bez=(a,x)=>(a||[]).filter(i=>i!==x);
+ const r={date:day,kid:k,ids:old.ids.filter(i=>ts.some(t=>t.id===i)),pend:bez(old.pend,id),odrz:bez(old.odrz,id),total:ts.length};
+ let added=false;
+ if(S.parent){if(has(old.ids,id))r.ids=bez(r.ids,id);else{r.ids=r.ids.concat(id);added=true}}
+ else{if(has(old.ids,id)){toast('To zadanie jest już zatwierdzone ✓');return}if(!has(old.pend,id)){r.pend=r.pend.concat(id);added=true}}
+ r.stars=ts.filter(t=>r.ids.includes(t.id)).reduce((a,t)=>a+(+t.s||1),0);r.all=ts.length>0&&r.ids.length===ts.length;
+ S.done=Object.assign({},S.done,{[key0]:r});render();
+ if(added){const n=K().name,full=r.ids.length+r.pend.length===ts.length;chime(full);
+  if(S.parent){if(r.all&&!old.all)toast('Komplet zatwierdzony dla: '+n+' 😘');else toast('Zatwierdzone ✓')}
+  else if(full)toast('Wszystko zgłoszone, '+n+'! Buziak po zatwierdzeniu 😘');
+  else toast(PRAISE[Math.floor(Math.random()*PRAISE.length)].replace('{n}',n)+' Zgłoszone ⏳')}
+ pending++;
+ chain=chain.then(()=>call('odhacz',k,day,id,S.parent?S.pin:'')).then(x=>{S.done=Object.assign({},S.done,{[x.key]:x.rec});setStore(true)})
+  .catch(e=>{toast(msg(e));return load()}).then(()=>{pending--;render()});
+}
+
+// zapis w arkuszu Google
+function setStore(ok,why){$('#store').textContent=ok?'Zapisane w arkuszu Google · odświeża się samo co 30 s':'Brak połączenia – spróbuję za chwilę.'+(why?' ('+why+')':'')}
+function saveCfg(c){call('zapiszKonfig',c,S.pin).then(cfg=>{S.cfg=cfg;render();toast('Zapisano ✓')}).catch(e=>toast(msg(e)))}
+function load(){
+ return call('pobierzStan').then(st=>{
+  if(pending)return;
+  const was=srvToday;srvToday=st.today;S.cfg=st.cfg;S.done=st.done;S.quiz=st.quiz||{};S.shop=st.sklep||[];
+  if(!S.day||S.day===was&&was!==srvToday){S.day=srvToday;S.month=null}
+  if(!S.kid||!kids().some(k=>k.id===S.kid)){let saved='';try{saved=localStorage.getItem(LS)||''}catch(e){}S.kid=(kids().find(k=>k.id===saved)||kids()[0]).id}
+  setStore(true);render();checkCelebrate();
+ }).catch(e=>{setStore(false,msg(e))});
+}
+
+function checkCelebrate(){if(S.parent||!S.kid)return;const r=rec(S.kid,today());if(!r||!r.all)return;const ck='cel-'+today()+'_'+S.kid;
+ let seen=false;try{seen=localStorage.getItem(ck)==='1';localStorage.setItem(ck,'1')}catch(e){}if(!seen){chime(true);celebrate()}}
+
+// fx
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2200)}
+let ac=null;function chime(big){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const n=big?[523,659,784,1047]:[784,1047];n.forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.0001,ac.currentTime+i*.09);g.gain.exponentialRampToValueAtTime(.18,ac.currentTime+i*.09+.02);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+i*.09+.35);o.connect(g).connect(ac.destination);o.start(ac.currentTime+i*.09);o.stop(ac.currentTime+i*.09+.4)})}catch(e){}}
+function confetti(n){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const c=$('#fx'),x=c.getContext('2d'),r=devicePixelRatio||1;c.width=innerWidth*r;c.height=innerHeight*r;x.scale(r,r);
+ const cols=['#ff5d8f','#2f7cf6','#ffb703','#1fae5b','#9b5de5'],P=Array.from({length:n},()=>({x:innerWidth/2+(Math.random()-.5)*120,y:innerHeight*.45,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,r:Math.random()*6.28,vr:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*5)],w:6+Math.random()*6}));const t0=performance.now();
+ (function f(t){x.clearRect(0,0,innerWidth,innerHeight);P.forEach(p=>{p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.w/4,p.w,p.w/2);x.restore()});if(t-t0<2800)requestAnimationFrame(f);else x.clearRect(0,0,innerWidth,innerHeight)})(t0)}
+function celebrate(){$('#celP').textContent=K().name+', wszystkie obowiązki zrobione! Buziak od mamy i taty.';$('#ov').classList.add('show');confetti(180);setTimeout(()=>$('#celB').focus(),50)}
+
+// parent
+let E=null,ek=null;
+function openGate(){$('#ga').value='';$('#ge').textContent='';$('#gate').showModal();setTimeout(()=>$('#ga').focus(),50)}
+function openEd(){E=JSON.parse(JSON.stringify(S.cfg));ek=S.kid;drawEd();$('#ed').showModal()}
+function drawEd(){const kd=E.kids.find(k=>k.id===ek);
+ $('#etabs').innerHTML=E.kids.map(k=>`<button class="btn${k.id===ek?' pri':''}" data-ek="${k.id}">${esc(k.name)}</button>`).join('');
+ $('#ename').value=kd.name;
+ $('#etasks').innerHTML=(E.tasks[ek]||[]).map(t=>`<div class="er" data-id="${t.id}"><input class="em-in" data-f="e" value="${esc(t.e)}" aria-label="Emoji"><input data-f="t" value="${esc(t.t)}" aria-label="Nazwa zadania"><select data-f="s" aria-label="Gwiazdki">${[1,2,3].map(n=>`<option value="${n}"${+t.s===n?' selected':''}>${'★'.repeat(n)}</option>`).join('')}</select><button class="x" data-del aria-label="Usuń zadanie">✕</button><div class="days">${ORD.map(w=>`<button data-w="${w}" aria-pressed="${t.d.includes(w)}">${WD[w]}</button>`).join('')}</div></div>`).join('')||'<p class="hint">Brak zadań.</p>';
+ $('#erw').innerHTML=E.rewards.map(w=>`<div class="rr" data-rid="${w.id}"><input data-f="t" value="${esc(w.t)}" aria-label="Nagroda"><input data-f="c" type="number" min="1" value="${w.c}" aria-label="Gwiazdki"><select data-f="typ" aria-label="Rodzaj"><option value="osobista"${w.typ!=='rodzinna'?' selected':''}>osobista</option><option value="rodzinna"${w.typ==='rodzinna'?' selected':''}>rodzinna</option></select><button class="x" data-rdel aria-label="Usuń nagrodę">✕</button></div>`).join('')}
+$('#ed').addEventListener('input',e=>{const t=e.target;if(t.id==='ename'){E.kids.find(k=>k.id===ek).name=t.value;return}
+ const row=t.closest('.er');if(row){const o=E.tasks[ek].find(x=>x.id===row.dataset.id);o[t.dataset.f]=t.dataset.f==='s'?+t.value:t.value;return}
+ const rr=t.closest('[data-rid]');if(rr){const o=E.rewards.find(x=>x.id===rr.dataset.rid);o[t.dataset.f]=t.dataset.f==='c'?Math.max(1,+t.value||1):t.value}});
+$('#ed').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.ek){ek=b.dataset.ek;drawEd()}
+ else if(b.dataset.w){const o=E.tasks[ek].find(x=>x.id===b.closest('.er').dataset.id),w=+b.dataset.w;o.d=o.d.includes(w)?o.d.filter(x=>x!==w):o.d.concat(w);b.setAttribute('aria-pressed',o.d.includes(w))}
+ else if('del' in b.dataset){E.tasks[ek]=E.tasks[ek].filter(x=>x.id!==b.closest('.er').dataset.id);drawEd()}
+ else if('rdel' in b.dataset){E.rewards=E.rewards.filter(x=>x.id!==b.closest('[data-rid]').dataset.rid);drawEd()}
+ else if(b.id==='eadd'){(E.tasks[ek]=E.tasks[ek]||[]).push(T('⭐','Nowe zadanie',1,ALL.slice()));drawEd()}
+ else if(b.id==='eradd'){E.rewards.push({id:uid(),t:'Nowa nagroda',e:'🎁',c:50,typ:'osobista'});drawEd()}
+ else if(b.id==='ecan')$('#ed').close();
+ else if(b.id==='esave'){E.kids.forEach(k=>{if(!k.name.trim())k.name='?'});saveCfg(E);$('#ed').close()}});
+
+// events
+$('#kids').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;S.kid=b.dataset.k;try{localStorage.setItem(LS,S.kid)}catch(x){}render()});
+$('#apr').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const W=waiting();
+ if(b.id==='apAll')decide(W.map(x=>Object.assign(x,{ok:true})));
+ else if(b.dataset.i){const x=W[+b.dataset.i];if(x)decide([Object.assign(x,{ok:b.dataset.ok==='1'})])}});
+$('#tbT').onclick=()=>{S.tab='t';render()};$('#tbQ').onclick=()=>{S.tab='q';render()};$('#tbS').onclick=()=>{S.tab='s';sconf='';render()};
+$('#vQ').addEventListener('input',e=>{const t=e.target;if(t.dataset.i==null)return;const key=S.day+'_'+S.kid;(S.qd[key]||(S.qd[key]={}))[t.dataset.i]=t.value});
+$('#vQ').addEventListener('keydown',e=>{const t=e.target;if(e.key==='Enter'&&t.dataset.i!=null){e.preventDefault();answer(+t.dataset.i,t.value)}});
+$('#vQ').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;
+ if(b.dataset.chk!=null){const inp=$('#vQ input[data-i="'+b.dataset.chk+'"]');answer(+b.dataset.chk,inp?inp.value:'')}
+ else if(b.classList.contains('opt'))answer(+b.dataset.i,b.dataset.v)});
+$('#vS').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const k=S.kid;
+ if(b.dataset.buy){if(sconf!=='b'+b.dataset.buy){sconf='b'+b.dataset.buy;render();return}sconf='';const r=S.cfg.rewards.find(x=>x.id===b.dataset.buy);
+  S.shop=S.shop.concat({id:'tmp'+Date.now(),kid:k,typ:'Zakup',rid:r.id,t:r.t,c:r.c,st:'do wydania'});chime(true);confetti(80);toast('Kupione: '+r.t+'! Rodzic wkrótce wyda nagrodę 🎁');shopCall('kup',k,r.id)}
+ else if(b.dataset.pay){const r=S.cfg.rewards.find(x=>x.id===b.dataset.pay),a=+b.dataset.amt;if(a<1)return;
+  S.shop=S.shop.concat({id:'tmp'+Date.now(),kid:k,typ:'Wpłata',rid:r.id,t:r.t,c:a,st:'w skarbonce'});chime(false);toast('Wpłacone '+a+' ★ do skarbonki: '+r.t);shopCall('wplac',k,r.id,a)}
+ else if(b.dataset.sa){shopCall('sklepRodzic',b.dataset.sa,b.dataset.id,S.pin);toast(b.dataset.sa==='wydaj'?'Wydane ✓':'Gwiazdki zwrócone')}
+ else if(b.dataset.jr){if(b.dataset.jr==='zwrocSkarbonke'&&sconf!=='r'+b.dataset.id){sconf='r'+b.dataset.id;render();return}sconf='';shopCall('sklepRodzic',b.dataset.jr,b.dataset.id,S.pin);toast(b.dataset.jr==='zrealizuj'?'Skarbonka zrealizowana – zbieramy od nowa!':'Wpłaty zwrócone')}});
+$('#list').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b)toggle(b.dataset.t)});
+$('#cal').addEventListener('click',e=>{const b=e.target.closest('[data-d]');if(b){S.day=b.dataset.d;render()}});
+const go=n=>{S.day=add(S.day,n);S.month=S.day.slice(0,7);render()};
+$('#prev').onclick=()=>go(-1);$('#next').onclick=()=>go(1);$('#tod').onclick=()=>{S.day=today();S.month=null;render()};
+const mv=n=>{const d=parse(S.month+'-01');d.setMonth(d.getMonth()+n);S.month=key(d).slice(0,7);render()};
+$('#mp').onclick=()=>mv(-1);$('#mn').onclick=()=>mv(1);
+$('#celB').onclick=()=>$('#ov').classList.remove('show');
+$('#par').onclick=()=>S.parent?null:openGate();
+$('#gc').onclick=()=>$('#gate').close();
+$('#gateF').addEventListener('submit',e=>{e.preventDefault();const p=$('#ga').value.trim();$('#ge').textContent='Sprawdzam…';call('sprawdzPin',p).then(ok=>{if(ok){S.parent=true;S.pin=p;$('#gate').close();render();toast('Tryb rodzica włączony')}else $('#ge').textContent='Zły PIN. Spróbuj jeszcze raz.'}).catch(x=>{$('#ge').textContent=msg(x)})});
+$('#pend').onclick=()=>{S.parent=false;S.pin='';render()};
+$('#edit').onclick=()=>S.cfg&&openEd();
+setInterval(()=>{if(!document.hidden)load()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
+render();load();
+}
+</script>
+</body>
+</html>
