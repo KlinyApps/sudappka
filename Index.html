@@ -271,7 +271,7 @@ let pending=0;
 
 // google.script.run jako Promise
 // Adres bramki z Apps Script (link kończący się na /exec). Potrzebny tylko w wersji na GitHub Pages.
-const API_URL='WKLEJ_TUTAJ_LINK_EXEC';
+const API_URL='https://script.google.com/macros/s/AKfycbzcpKkWso7BdyF-aYajFvwChsBUVCxgjNd47KN-N5FKetAGf9wfmCx6uI1D33olkjpe0w/exec';
 const GAS=typeof google!=='undefined'&&google.script&&google.script.run;
 const call=(fn,...a)=>GAS?new Promise((ok,no)=>{google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn](...a)})
  :fetch(API_URL,{method:'POST',body:JSON.stringify({fn,args:a}),credentials:'omit',redirect:'follow'}).then(r=>r.json()).then(j=>{if(!j.ok)throw new Error(j.error);return j.data});
